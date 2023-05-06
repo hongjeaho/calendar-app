@@ -21,7 +21,7 @@ function getDemoData() {
 function App() {
   return (
     <div>
-      <Calendar accommoDatePrice={getDemoData()} />
+      <Calendar accommoDatePrice={getDemoData()} dateFormat={'yyyy.MM.dd'} />
     </div>
   )
 }

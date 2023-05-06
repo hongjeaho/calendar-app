@@ -31,6 +31,7 @@ const Week = styled.div`
 
 interface Props {
   accommoDatePrice: AccommoDatePrice[]
+  dateFormat: string
 }
 
 const currentDays = (currentDay: Date) => {
@@ -45,7 +46,7 @@ const currentDays = (currentDay: Date) => {
   return [...blank, ...range]
 }
 
-const Calendar: React.FC<Props> = ({ accommoDatePrice }) => {
+const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat }) => {
   const currentDate = new Date()
   const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -58,7 +59,11 @@ const Calendar: React.FC<Props> = ({ accommoDatePrice }) => {
             <Week key={day}>{day}</Week>
           ))}
         </WeekHeader>
-        <CalendarBody accommoDatePrice={accommoDatePrice} currentDays={currentDays(currentDate)} />
+        <CalendarBody
+          accommoDatePrice={accommoDatePrice}
+          currentDays={currentDays(currentDate)}
+          dateFormat={dateFormat}
+        />
       </Contents>
     </Base>
   )
