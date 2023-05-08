@@ -1,7 +1,7 @@
 import styled from '@emotion/styled/macro'
 import React, { useCallback } from 'react'
 import { type AccommoDatePrice } from '@/type'
-import { addDays, format, getDate, subDays } from 'date-fns'
+import { format, getDate } from 'date-fns'
 import { useRecoilState } from 'recoil'
 import { roomSelectedListState } from '@/store'
 
@@ -18,35 +18,51 @@ const Day = styled.div<{ week: number | undefined; isSelected: boolean }>`
   background-color: ${({ isSelected }) => (isSelected ? 'aqua' : '#fff')};
 `
 
-const Date = styled.div``
-const Price = styled.div``
+const CalendarDate = styled.div``
+const CalendarPrice = styled.div``
 
 const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) => {
   const items = Array.from({ length: 7 }, (_, index: number) => days[index])
   const [selectedList, setSelectedList] = useRecoilState<Date[]>(roomSelectedListState)
 
+  const isSelected = useCallback(
+    (selectedDay: Date) => {
+      if (selectedDay == null) return false
+
+      return selectedList
+        .map(it => format(it, dateFormat))
+        .includes(format(selectedDay, dateFormat))
+    },
+    [selectedList],
+  )
+
   const onSelected = useCallback(
     (item: Date | null) => {
       if (item == null) return
 
-      let days: Date[] = []
-
+      const currentDay = getDate(item)
       const lastSelectedDay = getDate(selectedList[selectedList.length - 1])
       const firstSelectedDay = getDate(selectedList[0])
-      const preDay = getDate(subDays(item, 1))
-      const nextDay = getDate(addDays(item, 1))
 
-      if (firstSelectedDay !== undefined && firstSelectedDay === nextDay) {
-        days = [item, ...selectedList]
-      } else if (lastSelectedDay !== undefined && lastSelectedDay !== preDay) {
-        days = [item]
-      } else if (selectedList.includes(item)) {
-        days = selectedList.filter(day => item !== day)
-      } else {
-        days = [...selectedList, item]
+      const rangeFunc = (start: number, end: number, baseDate: Date) => {
+        return Array(end - start + 1)
+          .fill(null)
+          .map((_, index) => start + index)
+          .map(day => new Date(item.getFullYear(), item.getMonth(), day))
       }
 
-      setSelectedList(days)
+      let tempDays: Date[] = []
+      if (isSelected(item) || selectedList.length === 0) {
+        tempDays = [item]
+      } else if (firstSelectedDay !== undefined && firstSelectedDay > currentDay) {
+        const ranges = rangeFunc(currentDay, firstSelectedDay, item)
+        tempDays = [...ranges, ...selectedList]
+      } else if (lastSelectedDay !== undefined && lastSelectedDay < currentDay) {
+        const ranges = rangeFunc(lastSelectedDay, currentDay, selectedList[selectedList.length - 1])
+        tempDays = [...selectedList, ...ranges]
+      }
+
+      setSelectedList(tempDays)
     },
     [selectedList],
   )
@@ -57,18 +73,18 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
         <Day
           key={index}
           week={item?.getDay()}
-          isSelected={item !== null && selectedList.includes(item)}
+          isSelected={item !== null && isSelected(item)}
           onClick={() => {
             onSelected(item)
           }}
         >
-          <Date>{item?.getDate()}</Date>
-          <Price>
+          <CalendarDate>{item?.getDate()}</CalendarDate>
+          <CalendarPrice>
             {item != null &&
               accommoDatePrice
                 .filter(accommo => accommo.date === format(item, dateFormat))
                 .map(accommo => accommo.price)}
-          </Price>
+          </CalendarPrice>
         </Day>
       ))}
     </>
