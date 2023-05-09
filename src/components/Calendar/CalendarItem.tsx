@@ -11,11 +11,21 @@ interface Props {
   dateFormat: string
 }
 
-const Day = styled.div<{ week: number | undefined; isSelected: boolean }>`
+const Day = styled.div<{
+  week: number | undefined
+  isSelected: boolean
+  isStart: boolean
+  isIng: boolean
+  isEnd: boolean
+}>`
   width: 100%;
   text-align: center;
   color: ${({ week }) => (week === 0 ? 'red' : '#000')};
   background-color: ${({ isSelected }) => (isSelected ? 'aqua' : '#fff')};
+
+  ${({ isStart }) => (isStart ? 'border-color: rosybrown' : '')}
+  ${({ isIng }) => (isIng ? 'border-color: red' : '')}
+  ${({ isEnd }) => (isEnd ? 'border-color: white' : '')}
 `
 
 const CalendarDate = styled.div``
@@ -26,12 +36,26 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
   const [selectedList, setSelectedList] = useRecoilState<Date[]>(roomSelectedListState)
 
   const isSelected = useCallback(
-    (selectedDay: Date) => {
+    (selectedDay: Date | null) => {
       if (selectedDay == null) return false
 
       return selectedList
         .map(it => format(it, dateFormat))
         .includes(format(selectedDay, dateFormat))
+    },
+    [selectedList],
+  )
+
+  const getSelectedIndex = useCallback(
+    (selectedDay: Date | null) => {
+      if (selectedDay == null) return -1
+      if (selectedList.length === 0) return -1
+
+      return (
+        selectedList
+          .map(it => format(it, dateFormat))
+          .findIndex(it => it === format(selectedDay, dateFormat)) + 1
+      )
     },
     [selectedList],
   )
@@ -73,7 +97,10 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
         <Day
           key={index}
           week={item?.getDay()}
-          isSelected={item !== null && isSelected(item)}
+          isSelected={isSelected(item)}
+          isStart={getSelectedIndex(item) === 1}
+          isIng={getSelectedIndex(item) > 1 && getSelectedIndex(item) < selectedList.length}
+          isEnd={getSelectedIndex(item) === selectedList.length}
           onClick={() => {
             onSelected(item)
           }}
