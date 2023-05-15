@@ -11,6 +11,7 @@ function getDemoData() {
   for (let day = 1; day <= lastDate.getDate(); day++) {
     sampleData.push({
       date: format(new Date(toDay.getFullYear(), toDay.getMonth(), day), 'yyyy.MM.dd'),
+      stock: day - 1,
       price: parseInt(`${day}000`),
     })
   }
@@ -21,7 +22,7 @@ function getDemoData() {
 function App() {
   return (
     <div>
-      <Calendar accommoDatePrice={getDemoData()} dateFormat={'yyyy.MM.dd'} />
+      <Calendar accommoDatePrice={getDemoData()} dateFormat={'yyyy.MM.dd'} startDate='2023.05.01'  endDate='2023.09.30'/>
     </div>
   )
 }

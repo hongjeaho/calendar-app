@@ -1,6 +1,6 @@
 import React from 'react'
 import { type AccommoDatePrice } from '@/type'
-import { format, startOfMonth, endOfMonth, getDay, getDate } from 'date-fns'
+import { format, startOfMonth, endOfMonth, getDay, getDate, parse, differenceInCalendarMonths, addMonths } from 'date-fns'
 import styled from '@emotion/styled/macro'
 import CalendarBody from './CalendarBody'
 
@@ -32,6 +32,8 @@ const Week = styled.div`
 interface Props {
   accommoDatePrice: AccommoDatePrice[]
   dateFormat: string
+  startDate: string
+  endDate: string
 }
 
 const currentDays = (currentDay: Date) => {
@@ -46,26 +48,44 @@ const currentDays = (currentDay: Date) => {
   return [...blank, ...range]
 }
 
-const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat }) => {
+const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat, startDate, endDate }) => {
   const currentDate = new Date()
+  const start = parse(startDate, dateFormat, currentDate)
+  const end = parse(endDate, dateFormat, currentDate)
+  const diffMonthNumber = differenceInCalendarMonths(end, start) + 1
+  const loopMonths = Array.from({length: diffMonthNumber}).map((_, index) => index)
+
   const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
+/***
+ * startEnd css
+ * past / disaveld >> 선택 못하게...
+ *    >> 제고가 없거나, 가격이 0이거나, 가격이 없는경우 : disabled
+ *    >> 오늘날짜 이전은 선택못하게
+ */
+
+
+
   return (
-    <Base>
-      <Title>{format(currentDate, 'yyyy.MM')}</Title>
-      <Contents>
-        <WeekHeader>
-          {DAYS.map(day => (
-            <Week key={day}>{day}</Week>
-          ))}
-        </WeekHeader>
-        <CalendarBody
-          accommoDatePrice={accommoDatePrice}
-          currentDays={currentDays(currentDate)}
-          dateFormat={dateFormat}
-        />
-      </Contents>
-    </Base>
+    <div>
+      {loopMonths.map(month => (
+        <Base key={month}>
+          <Title>{format(addMonths(start, month), 'yyyy.MM')}</Title>
+          <Contents>
+            <WeekHeader>
+              {DAYS.map(day => (
+                <Week key={day}>{day}</Week>
+              ))}
+            </WeekHeader>
+            <CalendarBody
+              accommoDatePrice={accommoDatePrice}
+              currentDays={currentDays(addMonths(start, month))}
+              dateFormat={dateFormat}
+            />
+          </Contents>
+        </Base>
+      ))}
+    </div>
   )
 }
 

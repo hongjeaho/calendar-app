@@ -3,11 +3,13 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 import { RecoilRoot } from 'recoil'
+import DebugObserver from './DebugObserver'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
   <React.StrictMode>
     <RecoilRoot>
+      <DebugObserver />  
       <App />
     </RecoilRoot>
   </React.StrictMode>,

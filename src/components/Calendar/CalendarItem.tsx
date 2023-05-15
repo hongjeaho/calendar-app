@@ -1,9 +1,10 @@
 import styled from '@emotion/styled/macro'
 import React, { useCallback } from 'react'
 import { type AccommoDatePrice } from '@/type'
-import { format, getDate } from 'date-fns'
+import { format, isBefore, isAfter, isToday, differenceInCalendarDays, addDays } from 'date-fns'
 import { useRecoilState } from 'recoil'
 import { roomSelectedListState } from '@/store'
+import { css } from '@emotion/react'
 
 interface Props {
   days: Array<Date | null>
@@ -11,21 +12,30 @@ interface Props {
   dateFormat: string
 }
 
+const isStartBackGroundCss = css`
+  background-color: blue;
+`
+
 const Day = styled.div<{
   week: number | undefined
   isSelected: boolean
   isStart: boolean
   isIng: boolean
   isEnd: boolean
+  isToday: boolean
+  isPast: boolean
+  isDisabled: boolean
 }>`
   width: 100%;
   text-align: center;
   color: ${({ week }) => (week === 0 ? 'red' : '#000')};
   background-color: ${({ isSelected }) => (isSelected ? 'aqua' : '#fff')};
 
-  ${({ isStart }) => (isStart ? 'border-color: rosybrown' : '')}
-  ${({ isIng }) => (isIng ? 'border-color: red' : '')}
-  ${({ isEnd }) => (isEnd ? 'border-color: white' : '')}
+  ${({ isStart }) => (isStart ? '' : '')}
+  ${({ isIng }) => (isIng && isStartBackGroundCss)}
+  ${({ isEnd }) => (isEnd ? 'border-color: white;' : '')} 
+  ${({ isToday }) => (isToday ? 'background-color: yellow;' : '')} 
+  ${({ isPast }) => (isPast ? 'color: #DCDCDC' : 'color: #000')};
 `
 
 const CalendarDate = styled.div``
@@ -34,6 +44,7 @@ const CalendarPrice = styled.div``
 const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) => {
   const items = Array.from({ length: 7 }, (_, index: number) => days[index])
   const [selectedList, setSelectedList] = useRecoilState<Date[]>(roomSelectedListState)
+  const toDay = new Date()
 
   const isSelected = useCallback(
     (selectedDay: Date | null) => {
@@ -61,28 +72,31 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
   )
 
   const onSelected = useCallback(
-    (item: Date | null) => {
-      if (item == null) return
+    (currentDay: Date | null) => {
+      if (currentDay == null) return
 
-      const currentDay = getDate(item)
-      const lastSelectedDay = getDate(selectedList[selectedList.length - 1])
-      const firstSelectedDay = getDate(selectedList[0])
+      const toDay = new Date();      
+      const lastSelectedDay = selectedList[selectedList.length - 1]
+      const firstSelectedDay = selectedList[0]
 
-      const rangeFunc = (start: number, end: number, baseDate: Date) => {
-        return Array(end - start + 1)
+      if(differenceInCalendarDays(currentDay, toDay) < 0) return
+
+      const rangeFunc = (start: Date, end: Date) => {
+        const diffDay = differenceInCalendarDays(end, start)
+        return Array(diffDay + 1)
           .fill(null)
-          .map((_, index) => start + index)
-          .map(day => new Date(item.getFullYear(), item.getMonth(), day))
+          .map((_, index) => index)
+          .map(day => addDays(start, day))
       }
 
       let tempDays: Date[] = []
-      if (isSelected(item) || selectedList.length === 0) {
-        tempDays = [item]
-      } else if (firstSelectedDay !== undefined && firstSelectedDay > currentDay) {
-        const ranges = rangeFunc(currentDay, firstSelectedDay, item)
+      if (isSelected(currentDay) || selectedList.length === 0) {
+        tempDays = [currentDay]
+      } else if (firstSelectedDay !== undefined && isAfter(firstSelectedDay, currentDay)) {
+        const ranges = rangeFunc(currentDay, firstSelectedDay)
         tempDays = [...ranges, ...selectedList]
-      } else if (lastSelectedDay !== undefined && lastSelectedDay < currentDay) {
-        const ranges = rangeFunc(lastSelectedDay, currentDay, selectedList[selectedList.length - 1])
+      } else if (lastSelectedDay !== undefined && isBefore(lastSelectedDay, currentDay)) {
+        const ranges = rangeFunc(lastSelectedDay, currentDay)
         tempDays = [...selectedList, ...ranges]
       }
 
@@ -90,6 +104,16 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
     },
     [selectedList],
   )
+
+  const isDisabled = useCallback((currentDay: Date | null) => {
+      if (currentDay == null) return true
+
+      return accommoDatePrice
+      .filter(accommo => accommo.date === format(currentDay, dateFormat))
+      .filter(accommo => accommo.price > 0 || accommo.stock > 0)
+      .length === 1
+      
+  }, [accommoDatePrice])
 
   return (
     <>
@@ -101,6 +125,9 @@ const CalendarItem: React.FC<Props> = ({ days, accommoDatePrice, dateFormat }) =
           isStart={getSelectedIndex(item) === 1}
           isIng={getSelectedIndex(item) > 1 && getSelectedIndex(item) < selectedList.length}
           isEnd={getSelectedIndex(item) === selectedList.length}
+          isToday={(item != null) && isToday(item)}
+          isPast={(item != null) && differenceInCalendarDays(item, toDay) < 0}
+          isDisabled={item == null || isDisabled(item)}
           onClick={() => {
             onSelected(item)
           }}
