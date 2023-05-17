@@ -36,7 +36,7 @@ interface Props {
   endDate: string
 }
 
-const currentDays = (currentDay: Date) => {
+const rangeDays = (currentDay: Date) => {
   const startDay = startOfMonth(currentDay)
   const lastDay = endOfMonth(currentDay)
 
@@ -56,16 +56,6 @@ const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat, startDate, en
   const loopMonths = Array.from({length: diffMonthNumber}).map((_, index) => index)
 
   const DAYS = ['일', '월', '화', '수', '목', '금', '토']
-
-/***
- * startEnd css
- * past / disaveld >> 선택 못하게...
- *    >> 제고가 없거나, 가격이 0이거나, 가격이 없는경우 : disabled
- *    >> 오늘날짜 이전은 선택못하게
- */
-
-
-
   return (
     <div>
       {loopMonths.map(month => (
@@ -79,7 +69,7 @@ const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat, startDate, en
             </WeekHeader>
             <CalendarBody
               accommoDatePrice={accommoDatePrice}
-              currentDays={currentDays(addMonths(start, month))}
+              rangeDays={rangeDays(addMonths(start, month))}
               dateFormat={dateFormat}
             />
           </Contents>

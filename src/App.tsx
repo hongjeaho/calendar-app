@@ -1,14 +1,17 @@
 import React from 'react'
 import { type AccommoDatePrice } from './type'
-import { format, endOfMonth } from 'date-fns'
+import { format, getDate, parse } from 'date-fns'
 import Calendar from './components/Calendar'
 
-function getDemoData() {
+function getDemoData(start:string, end:string, dateFormat:string) {
+  
   const toDay = new Date()
+  
   const sampleData: AccommoDatePrice[] = []
-  const lastDate = endOfMonth(toDay)
+  const firstDate = parse(start, dateFormat, toDay) 
+  const lastDate = parse(end, dateFormat, toDay)
 
-  for (let day = 1; day <= lastDate.getDate(); day++) {
+  for (let day = getDate(firstDate); day <= lastDate.getDate(); day++) {
     sampleData.push({
       date: format(new Date(toDay.getFullYear(), toDay.getMonth(), day), 'yyyy.MM.dd'),
       stock: day - 1,
@@ -20,9 +23,13 @@ function getDemoData() {
 }
 
 function App() {
+  const startDate = '2023.05.05'
+  const endDate = '2023.05.22'
+  const dateFormat = 'yyyy.MM.dd'
+
   return (
     <div>
-      <Calendar accommoDatePrice={getDemoData()} dateFormat={'yyyy.MM.dd'} startDate='2023.05.01'  endDate='2023.09.30'/>
+      <Calendar accommoDatePrice={getDemoData(startDate, endDate, dateFormat)} dateFormat={dateFormat} startDate={startDate}  endDate={endDate}/>
     </div>
   )
 }

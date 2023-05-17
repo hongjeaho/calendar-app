@@ -4,7 +4,7 @@ import CalendarItem from './CalendarItem'
 import styled from '@emotion/styled/macro'
 
 interface Props {
-  currentDays: Array<Date | null>
+  rangeDays: Array<Date | null>
   accommoDatePrice: AccommoDatePrice[]
   dateFormat: string
 }
@@ -13,16 +13,16 @@ const Week = styled.div`
   display: flex;
 `
 
-const CalendarBody: React.FC<Props> = ({ currentDays, accommoDatePrice, dateFormat }) => {
+const CalendarBody: React.FC<Props> = ({ rangeDays, accommoDatePrice, dateFormat }) => {
   const weekNum = 7
-  const weeks = Math.ceil(currentDays.length / weekNum)
+  const weeks = Math.ceil(rangeDays.length / weekNum)
 
   return (
     <>
       {[...Array(weeks).keys()].map(week => (
         <Week key={week}>
           <CalendarItem
-            days={currentDays.slice(week * weekNum, week * weekNum + weekNum)}
+            weekRangeDays={rangeDays.slice(week * weekNum, week * weekNum + weekNum)}
             accommoDatePrice={accommoDatePrice}
             dateFormat={dateFormat}
           />
