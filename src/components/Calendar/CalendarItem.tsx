@@ -2,16 +2,16 @@ import styled from '@emotion/styled/macro'
 import React, { useCallback } from 'react'
 import { type AccommoDatePrice } from '@/type'
 import { format, isBefore, isAfter, isToday, differenceInCalendarDays, addDays } from 'date-fns'
-import { useRecoilState } from 'recoil'
-import { roomSelectedListState } from '@/store'
+import { useRecoilState, useRecoilValue } from 'recoil'
+import { roomSelectedIndexs, roomSelectedListState } from '@/store'
 import { css } from '@emotion/react'
 
 interface Props {
   weekRangeDays: Array<Date | null>
   accommoDatePrice: AccommoDatePrice[]
   dateFormat: string
+  rangeDisabledDay: Record<string, boolean>
 }
-
 
 const Day = styled.div<{
   week: number | undefined
@@ -53,24 +53,12 @@ const Day = styled.div<{
 const CalendarDate = styled.div``
 const CalendarPrice = styled.div``
 
-const CalendarItem: React.FC<Props> = ({ weekRangeDays, accommoDatePrice, dateFormat }) => {
+const CalendarItem: React.FC<Props> = ({ weekRangeDays, accommoDatePrice, dateFormat, rangeDisabledDay }) => {
   const items = Array.from({ length: 7 }, (_, index: number) => weekRangeDays[index])
   const [selectedList, setSelectedList] = useRecoilState<Date[]>(roomSelectedListState)
+  const selectedIndexs = useRecoilValue(roomSelectedIndexs(dateFormat))
+
   const toDay = new Date()
-
-  const getSelectedIndex = useCallback(
-    (selectedDay: Date | null) => {
-      if (selectedDay == null) return -1
-      if (selectedList.length === 0) return -1
-
-      return (
-        selectedList
-          .map(it => format(it, dateFormat))
-          .findIndex(it => it === format(selectedDay, dateFormat)) + 1
-      )
-    },
-    [selectedList],
-  )
 
   const onSelected = useCallback(
     (currentDay: Date | null) => {
@@ -81,13 +69,14 @@ const CalendarItem: React.FC<Props> = ({ weekRangeDays, accommoDatePrice, dateFo
       const firstSelectedDay = selectedList[0]
 
       if(differenceInCalendarDays(currentDay, toDay) < 0) return
-      if(isDisabled(currentDay)) return
+      if(rangeDisabledDay[format(currentDay, dateFormat)]) return
 
-      const rangeFunc = (start: Date, end: Date) => {
+      const rangeFunc = (start: Date, end: Date, isLast:boolean) => {
         const diffDay = differenceInCalendarDays(end, start)
-        return Array(diffDay + 1)
+        
+        return Array(diffDay + (isLast ? 0 : 1))
           .fill(null)
-          .map((_, index) => index)
+          .map((_, index) => index + (isLast ? 1 : 0))
           .map(day => addDays(start, day))
       }
 
@@ -103,10 +92,10 @@ const CalendarItem: React.FC<Props> = ({ weekRangeDays, accommoDatePrice, dateFo
       if (isSelected(currentDay) || selectedList.length === 0) {
         tempDays = [currentDay]
       } else if (firstSelectedDay !== undefined && isAfter(firstSelectedDay, currentDay)) {
-        const ranges = rangeFunc(currentDay, firstSelectedDay)
+        const ranges = rangeFunc(currentDay, firstSelectedDay, false)
         tempDays = [...ranges, ...selectedList]
       } else if (lastSelectedDay !== undefined && isBefore(lastSelectedDay, currentDay)) {
-        const ranges = rangeFunc(lastSelectedDay, currentDay)
+        const ranges = rangeFunc(lastSelectedDay, currentDay, true)
         tempDays = [...selectedList, ...ranges]
       }
 
@@ -115,52 +104,36 @@ const CalendarItem: React.FC<Props> = ({ weekRangeDays, accommoDatePrice, dateFo
     [selectedList, dateFormat],
   )
 
-  const isDisabled = useCallback((currentDay: Date | null) => {
-      if (currentDay == null) return true
-
-      const isUsed = accommoDatePrice
-        .map(accomm => accomm.date)
-        .includes(format(currentDay, dateFormat))
-      
-      if(!isUsed) {
-        return true
-      }  
-
-      return accommoDatePrice
-      .filter(accomm => accomm.date === format(currentDay, dateFormat))
-      .filter(accomm => accomm.price === 0 || accomm.stock === 0)
-      .length === 1
-      
-  }, [accommoDatePrice])
-
-  
-
   return (
     <>
-      {items.map((item, index) => (
-        <Day
-          key={index}
-          week={item?.getDay()}
-          isStart={getSelectedIndex(item) === 1 && selectedList.length === 1}
-          isStartEnd={getSelectedIndex(item) === 1 && selectedList.length > 1}
-          isIng={getSelectedIndex(item) > 1 && getSelectedIndex(item) < selectedList.length}
-          isEnd={getSelectedIndex(item) > 1 && getSelectedIndex(item) === selectedList.length}
-          isToday={(item != null) && isToday(item)}
-          isPast={(item != null) && differenceInCalendarDays(item, toDay) < 0}
-          isDisabled={item == null || isDisabled(item)}
-          onClick={() => {
-            onSelected(item)
-          }}
-        >
-          <CalendarDate>{item?.getDate()}</CalendarDate>
-          <CalendarPrice>
-            {item != null &&
-              accommoDatePrice
-                .filter(accommo => accommo.date === format(item, dateFormat))
-                .map(accommo => accommo.price)}
-          </CalendarPrice>
-        </Day>
-      ))}
+      {items.map((item, index) => {
+        const formattedDate = (item != null) ? format(item, dateFormat) : ''
+        return (
+          <Day
+            key={index}
+            week={item?.getDay()}
+            isStart={selectedIndexs[formattedDate] === 1 && selectedList.length === 1}
+            isStartEnd={selectedIndexs[formattedDate] === 1 && selectedList.length > 1}
+            isIng={selectedIndexs[formattedDate] > 1 && selectedIndexs[formattedDate] < selectedList.length}
+            isEnd={selectedIndexs[formattedDate] > 1 && selectedIndexs[formattedDate] === selectedList.length}
+            isToday={(item != null) && isToday(item)}
+            isPast={(item != null) && differenceInCalendarDays(item, toDay) < 0}
+            isDisabled={item == null || rangeDisabledDay[formattedDate]}
+            onClick={() => {
+              onSelected(item)
+            }}
+          >
+            <CalendarDate>{item?.getDate()}</CalendarDate>
+            <div>{}</div>
+            <CalendarPrice>
+              {item != null &&
+                accommoDatePrice
+                  .filter(accommo => accommo.date === format(item, dateFormat))
+                  .map(accommo => `${accommo.price} (${accommo.stock})`)}
+            </CalendarPrice>
+          </Day>
+        )
+      })}
     </>
   )
 }

@@ -54,8 +54,8 @@ const Calendar: React.FC<Props> = ({ accommoDatePrice, dateFormat, startDate, en
   const end = parse(endDate, dateFormat, currentDate)
   const diffMonthNumber = differenceInCalendarMonths(end, start) + 1
   const loopMonths = Array.from({length: diffMonthNumber}).map((_, index) => index)
-
   const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+
   return (
     <div>
       {loopMonths.map(month => (

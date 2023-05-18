@@ -12,9 +12,10 @@ function getDemoData(start:string, end:string, dateFormat:string) {
   const lastDate = parse(end, dateFormat, toDay)
 
   for (let day = getDate(firstDate); day <= lastDate.getDate(); day++) {
+    const stock = day - 5 < 0 ? 0 : day - 5 
     sampleData.push({
       date: format(new Date(toDay.getFullYear(), toDay.getMonth(), day), 'yyyy.MM.dd'),
-      stock: day - 1,
+      stock,
       price: parseInt(`${day}000`),
     })
   }
